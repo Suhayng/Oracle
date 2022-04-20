@@ -333,8 +333,7 @@ select email, length(email), employee_id, length(employee_id) from employees
  where ename like '%N';
  
  -- 87년도 입사한 사원들 출력하기 (substr)
- select * from employee
- where substr( hiredate, 1, 2)  = '87';
+ select hire_date, substr( hire_date, 1, 2) from employees;
 
 select * from employee
 where hiredate like '87%';
