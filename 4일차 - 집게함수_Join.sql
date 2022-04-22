@@ -209,10 +209,6 @@ on e.dno = d.dno
 where job = 'MANAGER';
 
 
-
-
-
-
 -- JOIN시 테이블 알리어스  ( 테이블 이름을 별칭으로 두고 많이 사용)
 select * 
 from employee e, department d
@@ -281,26 +277,225 @@ from employee e, department d, salgrade s
 where e.dno = d.dno 
 and salary between losal and hisal; 
 
+---------------------------------그룹함수 문제 1-----------------------------------------
+--1. 
+select * from employee
+
+select max(salary) as 최고액 , min(salary) as 최저액 , sum(salalry) as 총액, round(avg(salary)) as 평균급여
+from employee;
+
+--2. 
+select job, conut(*), max(salary) 최고액 , min(salary) 최저액 , sum(salalry) 총액, round(avg(salary)) 평균급여
+from employee
+group by job;
+
+-- rollup, cube : group by 절에서 사용하는 특수한 키워드.
+select job, conut(*), max(salary) 최고액 , min(salary) 최저액 , sum(salalry) 총액, round(avg(salary)) 평균급여
+from employee
+group by rollup(job);
+
+select job, conut(*), max(salary) 최고액 , min(salary) 최저액 , sum(salalry) 총액, round(avg(salary)) 평균급여
+from employee
+group by cube(job)
+order by job ;
+
+-- 두 개 이상의 컬럼을 그룹핑
+select dno, job, conut(*), max(salary) 최고액 , min(salary) 최저액 , sum(salalry) 총액, round(avg(salary)) 평균급여
+from employee
+group by rollup (dno, job)  -- 두 개 이상의 컬럼을 그룹핑 : 두 컬럼이 모두 만족될 때 그룹핑
+order by dno asc;
+
+select dno, job, conut(*), max(salary) 최고액 , min(salary) 최저액 , sum(salalry) 총액, round(avg(salary)) 평균급여
+from employee
+group by cube (dno, job)  -- 두 개 이상의 컬럼을 그룹핑 : 두 컬럼이 모두 만족될 때 그룹핑(앞 뒤 컬럼 모두 그룹핑해서 출력)
+order by dno asc;
+
+
+--3. 
+select distinct job
+from employee; --중복 제거만 됨
+
+select job, count(*)
+from employee
+group by job;
+
+--4.
+select count(distinct manager) 관리자수 -- count 는 null 을 포함하지 않는다.
+from employee;
+
+--5.
+select (max(salary)- min(salary)) "DIFFRENCE"
+from employee;
+
+--6. where, having 모두 사용
+select job, min(salary) 최저급여
+from employee
+where manager is not null 
+group by job
+--having min(salary) > 2000 (가능)
+having not min(salary) < 2000
+
+--7.
+select dno 부서번호 , count(*) 사원수 , round(avg(salary), 2) 평균급여
+from employee
+group by dno
+
+--8.
+select dcode (dno, 10, "ACCOUNTING"
+                   20, "RESEARCH"
+                   30, "SALES") as Dname, 
+       dcode (dno, 10, "NEWYORK"
+                   20, "DALAS"
+                   30, "CHICAGO") as Location, 
+        count(*) as "Number of people", round(avg(salary)) as Salary 
+from employee
+group by job
 
 
 
 
+--------------------------------문제 2 ---------------------------------------
+/*    
+-- ****중요****
+  - 제약 조건 : 테이블의 컬럼에 할당되어서 데이터의 무결성을 확보
+     -- Primary Key : 테이블에 한 번만 사용할 수 있다. 하나의 컬럼, 두 개 이상을 그룹핑해서 적용
+                      중복된 값을 넣을 수 없다. NULL 을 넣을 수 없다.
+     -- UNIQUE      : 테이블 여러 컬럼에 할당 할 수 있다. 중복된 값을 넣을 수 없다. 
+                      NULL 을 넣을 수 있다. -> 단 한 번만 넣을 수 있다. 
+     -- Foreign Key : 다른 테이블의 특정 컬럼의 값을 참조해서만 넣을 수 있다.
+                -- 자신의 컬럼에 임의의 값을 할당하지 못한다.
+     -- NOT NULL    : NULL 값을 컬럼에 할당할 수 없다.
+     -- CHECK       : 컬럼에 값을 할당할 때 체크해서 (조건에 만족) 값을 할당.
+     -- Default     : 값을 넣지 않을 때 기본값이 할당.    
+*/    
 
 
+--1. EQUI 조인을 사용하여 SCOTT 사원의 부서 번호와 부서 이름을 출력 하시오. 
+    -- 두 테이블을 조인할 때 공통의 키 컬럼을 찾아야 한다.
+    select * from employee;
+    select * from department;
 
-
+    select *
+    from department, emloyee; -- 카디시안 곱
     
+    select *
+    from employee, department 
+    where employee.dno = department.dno
+
+    select e.dno 부서번호, dname 부서이름, ename     -- dno 는 공통키 컬럼.
+    from employee e, department d
+    where e.dno = d.dno
+    and ename = 'SCOTT'
     
+--2. INNER JOIN과 ON 연산자를 사용하여 사원이름과 함께 그 사원이 소속된 부서이름과 지역명을 출력하시오. 
+    select ename 사원이름, dname 부서이름 , loc 지역명
+    from employee e inner join department d
+    on e.dno = d.dno 
+
+--3. INNER JOIN과 USING 연산자를 사용하여 10번 부서에 속하는 모든 담당 업무의 고유한 목록(한번씩만 표시)을 부서의 지역명을 포함하여 출력 하시오. 
+    -- JOIN 에서 USING 를 사용하는 경우 
+        -- NATURAL JOIN : 공통 키 컬럼을 Oracle 내부에서 자동 처리, 
+        --                반드시 두 테이블의 공통키 컬럼의 데이터 타입이 같아야 한다.
+        -- 두 테이블의 공통키 컬럼의 데이터 타입이 다른 경우 USING 을 사용한다.
+        -- 두 테이블의 공통키 컬럼이 여러개인 경우 USING 을 사용한다.
+        
+     desc employee;
+     desc department;
+
+    select dno, job, loc
+    form employee e inner join department d
+    using (dno) 
+    where dno = 10
     
+--4. NATUAL JOIN을 사용하여 커밋션을 받는 모든 사원의 이름, 부서이름, 지역명을 출력 하시오. 
+    select ename, dname, loc, commission 
+    from employee e Natural join department d -- on 절 생략
+    where commission is not null    
+    
+--5. EQUI 조인과 WildCard를 사용하여 이름에 A 가 포함된 모든 사원의 이름과 부서명을 출력 하시오. 
+    select ename, dname
+    from employee e, department d
+    where e.dno = d.dno
+    and ename like '%A%';
+
+--6. NATURAL JOIN을 사용하여 NEW YORK에 근무하는 모든 사원의 이름, 업무, 부서번호 및 부서명을 출력하시오. 
+    select ename, job, dno, loc
+    from employee natural join department d
+    where loc = 'NEW YORK';
 
 
+-- 04. 22
+
+-- SELF JOIN : 자기 자신의 테이블을 조인 한다. (주로 사원의 상사 정보를 출력할 때 사용, 조직도)
+    -- 별칭을 반드시 사용해야 한다.
+    -- select 절 : 테이블이름별칭.컬럼명  ,  
+
+select eno, ename, manager 
+from employee 
+where manager = '7788'
+
+select * from employee;
+
+-- self join 을 사용해서 사원의 직속 상관 이름
+
+-- EQUI JOIN 으로 Self join 을 처리 (Oracle 에서만 사용 가능)
+select e.eno as "사원번호", e.ename as "사원이름", e.manager as "직속상관번호", m.ename as "직속상관이름"
+from employee e, employee m     -- self join : 
+where e.manager = m.eno
+order by e.ename asc;
+  
+--   
+select * from employees;
+    
+select e.ename || '의 직속상관은 ' || e.manager || ' 입니다.'
+from employee e, employee m
+where e.manager = m.eno
+order by e.ename asc;
+
+select eno, ename, manager, eno, name 
+from employee;
+
+-- ANSI 호환 : INNER JOIN 으로 처리
+select e.eno as "사원번호", ename as "사원이름", manager as "직속상관번호", d.ename as "직속상관이름"
+from employee e inner join employee m    
+on e.manager = m.eno
+order by ename asc;
+
+--
+select * from employee;
+    
+select e.ename || '의 직속상관은 ' || e.manager || ' 입니다.'
+from employee e inner join employee m
+on e.manager = m.eno
+order by e.ename asc;
 
 
-
-
-
-
-
+-- OUTER JOIN : 
+    -- 특정 컬럼의 두 테이블에서 공통적이지 않는 내용을 출력 해야 할 때
+    -- 공통적이지 않는 컬럼은 NULL 출력
+    -- + 기호를 사용해서 출력 : Oracle
+    -- ANSI 호환 : OUTER JOIN 구문을 사용해서 출력 <== 모든 DBMS 에서 호환
+    
+    --Oracle
+    select e.ename, m.ename
+    from employee e join employee m
+    on e.manager = m.eno (+)
+    order by e.ename asc;
+  
+    select e.first_name, m.first_name
+    from employees e join employees m
+    on e.manager_id = m.employee_id (+)
+    order by e.first_name asc;
+      
+    --ANSI 호환 사용해서 출력.
+        -- Left Outer Join : 공통적인 부분이 없더라도 왼쪽 테이블은 무조건 모두 출력
+        -- Right Outer Join : 공통적인 부분이 없더라도 오른쪽 테이블은 무조건 모두 출력 
+        -- Full Outer Join : 공통적인 부분이 없더라도 양쪽 테이블은 무조건 모두 출력 
+    
+    select e.ename, m.ename
+    from employee e Left outer join employee m
+    on e.manager = m.eno
+    order by e.ename asc;
 
 
 
