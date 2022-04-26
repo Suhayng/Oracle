@@ -34,7 +34,7 @@ select * from dept;
      insert into 테이블명 (컬럼명1, 컬럼명2, 컬럼명3)
      values (10, 'MANAGER','SEOUL');
   */
-  
+desc dept;  
     
 insert into dept (dno, dname, loc)
 values (10, 'MANAGER','SEOUL');
