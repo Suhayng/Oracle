@@ -378,28 +378,266 @@ create table orders10 (
 select * from orders10
 
 drop table member
-drop table orders
+drop table orders;
 
------------- 문제 --------------
+/*
+    Foreign KEY 로 참조 되는 테이블 삭제하는 방법
+        1. 자식 테이블을 먼저 삭제 후 부모 테이블 삭제
+        2. Foreign KEY 제약 조건을 모두 제거 후 테이블 삭제
+        3.  cascade constraints 옵션으로 테이블을 강제 삭제
+*/
 
 
-create table member (
-    no number not null constraint PK_member_id Primary Key,
-    id varchar2(20) not null,
-    pwd varchar2(20) not null,
-    name varchar2(50) not null,
-    zipcode varchar2(7) not null,
-    address varchar2(30) not null,
-    tel varchar2(13) not null,
-    indate date default sysdate
-    foreign Key (zipcode) reference FK_member_id_tb_zipcode(zipcode)
+
+-- 테이블 삭제시 주의 사항 : 다른 테이블에서 Foreign Key 로 자신의 테이블을 참조 하고 있으면 삭제가 안됨.
+    -- 다른 테이블이 참조하고 있더라도 강제로 삭제하는 옵션 : cascade constraints 옵션으로 강제 삭제
+drop table orders;
+drop table member;          -- 오류 발생 : Orders 테이블의 id 컬럼이 member 테이블의 id 컬럼을 참조 하고 있다.
+drop table tb_zipcode;      -- 오류 발생 : member 테이블의 zipcode 컬럼이 tb_zipcode 테이블의 zipcode 컬럼을 참조하고 있다.
+drop table products;
+
+-- 제약 조건 제거 후에 삭제
+alter table tb_zipcode
+drop constraint;
+
+alter table member 
+drop constraint FK_MEMBER_ZIPCODE_TB_ZIPCODE
+
+alter table orders
+drop constraint FK_ORDERS_ID_MEMBER
+
+alter table orders
+drop constraint FK_ORDERS_ID_PRODUCT
+
+-- 제약 조건 확인
+select * from user_constraints
+table_name = 'MEMBER'
+
+drop table member;
+
+-- cascade constraints 옵션을 사용해서 삭제. <== Foreign KEY 제약 조건을 먼저 제거 후 삭제
+
+drop table member cascade constraints;
+drop table tb_zipcode cascade constraints;
+drop table products;
+
+
+
+-- 테이블 생성시(Foreign Key 존재) : 부모 테이블 (FK 참조 테이블) 을 먼저 생성해야 한다. 자식테이블 생성
+    -- 자식 테이블을 생성할 때 FK 를 넣지 않고 생성 후 , 부모 테이블 생성 후, Alter Table 를 사용해서 나중에 FK 를 넣어준다.
+
+-- *************** 다시 작성 
+------------ 테이블 설계 --------------
+
+create table tb_zipcode (
+    zipcode varchar2(7), not null constraint PK_tb_zipcode_zipcode primary KEY,
+    sido varcahr2(30),
+    gugum varchar2(30),
+    dong varchar2(30),
+    bungi varchar2(30)
 );
 
-create table Shopping_DB (
-    no number not null constraint PK_tb_zipcode_zipcode Primary Key,
-    zipcode varchar2(7) 우편번호 not null,
-    sido varchar2(30) not null,
-    gugum varchar2(30) not null,
-    dong varchar2(30) not null,
-    bungi varcahr(30)
-)
+create table member (
+    id varchar2(20) not null constraint PK_member_id primary KEY,
+    pwd varchar2(20),
+    name varchar2(50),
+    zipcode varchar2(7),
+    constraint FK_member_zipcod_tb_zipcode foreign KEY reference FK_member_id_tb_zipcode(zipcode)
+);
+
+-- 1.
+
+-- 2.
+
+-- 3. 부족한 자리수 늘려주기
+Alter Table tb_zipcode
+modify ZIPCODE varchar2 (100);
+
+Alter Table 
+
+
+-- 제약 조건 잠시 비활성화 하기, (잠시 비활성화 하기)  
+    --<= Bulk Insert (대량으로 Insert) : 제약 조건으로 인해서 Insert 되는 속도가 굉장히 느리다.
+alter table tb_zipcode
+disable constraint PK_tb_zipcode_zipcode    -- 오류 발생 : member 테이블의 zipcode 컬럼이 참조하고 있다.
+
+alter talbe tb_zipcode
+disable constraint PK_tb_zipcode_zipcode cascade    -- Memeber 테이블의 FK가 적용된 제약 조건도 함께 disable
+
+select * from user_constraints
+where table_name IN ('MEMBER', 'TB_ZIPCODE')
+
+select * from tb_zipcode
+
+truncate table tb_zipcode  -- 기존의 레코드만 모두 제거 ( 빠르게 모든 레코드 삭제)
+
+delete tb_zipcode;         -- 기존의 레코드만 
+
+------- 위에 다시 입력
+
+/*
+    제약 조건 수정(Alter Table) : 기존의 테이블에 제약 조건을 수정
+*/
+
+create table emp_copy50
+as
+select * from employee;
+
+create table dept_copy50
+as 
+selet * from department;
+
+select * from emp_copy50;
+select * from dept_copy50;
+
+select * from user_constrains
+where table_name in ('EMPLOYEE', 'DEPARTMENT')
+
+select * from user_constrains
+where table_name in ('EMP_COPY50', 'DEPT_COPY50')
+
+-- 테이블을 복사하면 레코드만 복사가 된다. 테이블의 제약 조건은 복사되어 오지 않는다. 
+    --Alter Table 를 사용해서 제약 조건을 적용
+
+select * from emp_copy50
+
+-- Priamry KEY
+alter table emp_copy50
+add constraint PK_emp_copy50_eno Primary KEY (eno);
+
+alter table deprt_copy50
+add constraint PK_dept_copy50 Primary KEY (dno);
+
+--Foreign KEY
+alter table emp_copy50
+add constraint FK_emp_copy50_dno_depy_copy50 foreign key (dno) reference dept_copy50 (dno);
+
+-- NOT NULL 제약 조건 추가 (구문이 다르다. add 대신에 modify 를 사용)
+desc employee;
+desc emp_copy50;    -- Not NULL 을 넣지 않았지만, Primary Key 제약 조건을 할당
+desc department;
+desc dept_copy50;   -- Primary Key 적용으로 자동으로 Not NULL
+
+    -- 기존의 null 이 들어가 있는 곳에서는 not null 컬럼으로 지정할 수 없다.
+select ename from emp_copy50
+where ename is null 
+
+alter table emp_copy50
+modify ename constraint NN_emp_copy50_ename not null;
+
+    -- commission 컬럼에 not null 할당 하기 : null 이 들어가 있는 경우 null 을 처리
+select * from emp_copy50;
+
+alter table emp_copy50
+modify commission constraint NN_emp_copy50_commission not null;
+
+update emp_copy50
+set commission = 0
+where commission is null
+
+-- Unique 제약 조건 추가 : 컬럼에 중복된 값이 있으면 할당 하지 못한다.
+
+select ename, count(*)
+from emp_copy50
+group ename
+having count(*) > 2
+
+alter table emp_copy50
+add constraint UK_emp
+
+
+-- check 제약 조건 추가
+
+select * from emp_copy50;
+
+alter table emp_copy50
+
+alter talbe emp_copy50
+add constraint CK_emp_salary check (salary > 0 and salary < 10000)
+
+-- default 제약 조건 추가 <제약조건이 아님 : 제약 조건 이름을 할당할 수 없다
+    -- 값을 넣지 않을 경우 default 로 설정된 값이 들어간다.
+
+alter table emp_copy50
+modify salary default 1000;
+
+alter table emp_copy50
+modify hiredqte default sysdate;
+
+desc emp_copy50;
+
+insert into emp_copy50 (eno, ename, commission)
+values (9999, 'JULI', 100)
+
+default table emp_copy50
+values ( 8888, 'JULIA', null, null, default, default, 1500, null);    
+
+/*  제약 조건 제거 : Alter Table 테이블명 drop */
+
+-- Primary KEY 제거 : 테이블에 하나만 존재함
+
+alter table emp_copy50  -- 오류 없이 제거됨
+drop primary key;
+
+alter table dept_copy50 -- 오류 발생 : foreign key 가 참조하기 때문에 삭제 안됨
+drop primary key;
+
+select * from dept_copy50 -- foreign key 를 먼저 제거하고 primary key 제거
+drop primary key cascade;
+
+select * from user_constraints
+where table_name in ('ENP_COPY50', 'DEPT_COPY50');
+
+--NOT NULL 컬럼 제거 하기 : <<제약 조건 이름으로 삭제>>
+alter table emp_copy50
+drop constraint NN_EMP_COPY50_ENAME;
+
+--Unique, check 제약 조건 제거 << 제약 조건 이름으로 제거>>
+alter table emp_copy50
+drop constraint UK_EMP_COPY50_ENAME;
+
+alter table emp_copy50
+drop constraint UK_EMP_COPY50_salary;
+
+alter table emp_copy50
+drop constraint NN_EMP_COPY50_COMMISSION;
+
+-- default 는 null 허용 컬럼은 default null 로 셋팅 : default 제약 조건을 제거 하는 것
+alter table emp_copy50
+modify hiredate default null;
+
+select * from emp_copy50
+
+/*
+    제약 조건 disable / enable
+        - 제약 조건을 잠시 중지 시킴.
+        - 대량(Bulk Insert) 으로 값을 테이블에 추가할 때 부하가 많이 걸린다. disable ==> enable
+        - Index를 생성시 부하가 많이 걸린다. disable ==> enable
+*/
+
+alter table dept_copy50
+add constraint PK_dept_copy50_dno Primary Key (dno);
+
+alter table emp_copy50
+add constraint PK_emp_copy50_eno Primary Key (eno);
+
+alter table emp_copy50
+add consraint FK_emp_copy50_dno Foreign Key (dno) references dept_copy50(dno);
+
+select * from user_constraints
+where table_name in ('EMP_COPY50', 'DEPT_COPY50')
+
+select * from emp_copy50;
+select * from dept_copy50;
+
+alter table emp_copy50
+disable constraint FK_emp_copy50_dno;
+
+insert into emp_copy50 (eno, ename, dno)
+values (8989, 'aaaa', 50)
+
+insert into dept_copy50
+values (50, 'HR', 'SEOUL')
+
+alter table emp_copy50
+enable constraint FK_emp_copy50_dno;
