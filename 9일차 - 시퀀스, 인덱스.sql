@@ -181,3 +181,23 @@ drop indexs idx_empcopy91_allsal
 		- Object Privilleges : 테이블, 뷰, 트리거, 함수, 저장 프로시저, 시퀀스, 인덱스 ) 접근 권한.
 */
 
+--  Object Privilleges : 테이블, 뷰, 트리거, 함수, 
+    --저장프로시져, 시퀀스, 인덱스에 부여되는 권한 할당.
+    ===================================================
+    권한      TABLE   VIEW    SEQUENCE    PROCEDURE
+    ---------------------------------------------------
+    ALTER       0               0           
+    DELETE      0      0
+    EXECUTE                                  0
+    INDEX       0   
+    INSERT      0      0
+    REFERENCES  0
+    SELECT      0      0        0
+    UPDATE      0      0
+    
+    -- 특정 테이블에 select 권한 부여 하기
+        create user user_test10 identified by 1234;    -- 계정 생성.
+        
+    
+    
+    
