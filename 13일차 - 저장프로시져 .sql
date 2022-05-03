@@ -195,10 +195,6 @@ is
 begin
     select salary into v_salary
     from employee
-    where ename = v_ename;        -- 인풋 매개 변수
-    RETURN v_salary;
-end;
-
 /* 함수의 데이터 사전*/
 select * from user_source
 where name = 'FN_SALARY_ENAME';
@@ -212,6 +208,10 @@ print v_salary;
 select ename, fn_salary_ename('SCOTT') as 월급
 from employee
 where ename = 'SCOTT';
+    where ename = v_ename;        -- 인풋 매개 변수
+    RETURN v_salary;
+end;
+
 
 -- 3. 함수 삭제
 drop function fn_salary_ename;
