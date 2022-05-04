@@ -350,7 +350,101 @@ end;
 /
 
 
+/*
+    트리거 (Trigger) : 권총의 방아쇠 (트리거), 방아쇠를 당기면 총알이 발사됨.
+       - 테이블에 부착되어 있다.
+       - 테이블에 이벤트가 발생될 때 자동으로 작동되는 프로그램 코드
+       - 테이블에 발생되는 이벤트 (Insert, Update, Delete)
+       - 트리거에서 정의된 begin ~ end 사이의 문장이 실행됨.
+       - before 트리거 : 테이블에서 트리거를 먼저 실행 후 INSERT, UPDATE, DELETE 가 적용
+       - after 트리거 : INSERT, UPDATE, DELETE 가 실행 후 트리거를 실행.
+       - 예) 주문 테이블에 값을 넣었을 때 배송 테이블에 자동으로 저장
+       - 예) 중요 테이블의 로그를 남길 때도 사용됨.
+       - :new 
+       - :old
+       - 트리거는 하나의 테이블에 총 3개까지 부착됨. (INSERT, UPDATE, DELETE)
+*/
+
+-- 실습 테이블 2개 생성 : 테이블의 구조만 복사 
+CREATE TAbLE dept_original
+AS
+SELECT * FROM departments
+WHERE 0=1 ;
+
+CREATE TAbLE dept_copy
+AS
+SELECT * FROM departments
+WHERE 0=1 ;
+
+SELECT * FROM dept_original;
+SELET * FROM dept_copy;
+
+-- 트리거 생성 (dept_original 테이블에 부착, INSERT 이벤트가 발생될 때 자동으로 작동)
+
+CREATE OR REPLACE TRIGGER tri_sample1
+        -- 트리거가 부착될 테이블, 이벤트(INSERT, UPDATE, DELETE), BEFORE, AFTER
+    AFTER INSERT        -- insert 이벤트가 작동 후 트리거가 작동 (BEGIN ~ END 사이의 코드)
+    ON dept_original    -- on 부착될 테이블
+    FOR EACH ROW        -- 모든 row 에 대해서 
+        
+
+BEGIN           -- 트리거가 실행할 코드
+    IF inserting THEN 
+        dbms_output.put_line('Insert Treigger 발생 !!!');
+        INSERT INTO dept_copy
+        VALUES ( :new.dno, :new.dname, :new.loc);      -- new 가상 임시 테이블
+        
+    END IF;
+END;
+/
+
+/* 트리거 확인 데이터 사전 : user_source */
+SELECT * FROM user_source WHERE name = 'TRI_SAMPLE1';
+
+SELECT * FROM dept_original;
+SELECT * FROM dept_copy;
+
+INSERT INTO dept_original
+VALUES (12, 'PROGRAM', 'BUSAN');
 
 
+/* delete 트리거 : dept_original 에서 제거 => dept_copy 에서 해당 내용을 제거 */
 
+CREATE OR REPLACE TRIGGER tri_del
+    -- 트리거가 작동시킬 테이블, 이벤트
+    AFTER DELETE        -- 원본 테이블의 delete 를 먼저 실행 후 트리거 작동
+    ON dept_original    -- dept_original 테이블에 트리거 부착
+    FOR EACH ROW
+BEGIN   -- 트리거가 작동할 코드
+    dbms_output.put_line('Delete Trigger 발생됨 !!!');
+    DELETE dept_copy
+    WHERE dept_copy.dno = :old.dno;     --dep_original 에서 삭제되는 가상 임시 테이블 : old
+END;
+/
 
+SELECT * FROM dept_original;
+SELECT * FROM dept_copy;
+
+DELETE dept_original
+WHERE dno = 14;
+
+/* update 트리거 */
+    
+CREATE OR REPLACE TRIGGER tri_update
+    AFTER UPDATE        
+    ON dept_original    
+    FOR EACH ROW
+BEGIN   
+    dbms_output.put_line('Delete Trigger 발생됨 !!!');
+    UPDATE dept_copy
+    SET dept_copy.dname = :new.dname
+    WHERE dept_copy.dno = 13;     
+END;
+/
+
+SELECT * FROM dept_original;        -- 주문 테이블 가정
+SELECT * FROM dept_copy;            -- 배송 테이블 가정
+
+UPDATE dept_original
+SET dname = 'prog'
+WHERE dno = 13;
